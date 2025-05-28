@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 250 250 250; /* #FAFAFA */
+  --foreground: 33 33 33; /* #212121 */
+  --card: 255 255 255; /* #FFFFFF */
+  --card-foreground: 33 33 33; /* #212121 */
+  --popover: 255 255 255; /* #FFFFFF */
+  --popover-foreground: 33 33 33; /* #212121 */
+  --primary: 25 118 210; /* #1976D2 */
+  --primary-foreground: 255 255 255; /* #FFFFFF */
+  --secondary: 245 245 245; /* #F5F5F5 */
+  --secondary-foreground: 33 33 33; /* #212121 */
+  --muted: 245 245 245; /* #F5F5F5 */
+  --muted-foreground: 117 117 117; /* #757575 */
+  --accent: 245 245 245; /* #F5F5F5 */
+  --accent-foreground: 33 33 33; /* #212121 */
+  --destructive: 211 47 47; /* #D32F2F */
+  --destructive-foreground: 255 255 255; /* #FFFFFF */
+  --border: 224 224 224; /* #E0E0E0 */
+  --input: 224 224 224; /* #E0E0E0 */
+  --ring: 25 118 210; /* #1976D2 */
+  --radius: 0.5rem;
+
+  /* Custom chat colors */
+  --admin-color: 211 47 47; /* #D32F2F */
+  --online-color: 56 142 60; /* #388E3C */
+  --surface: 255 255 255; /* #FFFFFF */
+}
+
+.dark {
+  --background: 18 18 18; /* #121212 */
+  --foreground: 250 250 250; /* #FAFAFA */
+  --card: 33 33 33; /* #212121 */
+  --card-foreground: 250 250 250; /* #FAFAFA */
+  --popover: 33 33 33; /* #212121 */
+  --popover-foreground: 250 250 250; /* #FAFAFA */
+  --primary: 33 150 243; /* #2196F3 */
+  --primary-foreground: 255 255 255; /* #FFFFFF */
+  --secondary: 66 66 66; /* #424242 */
+  --secondary-foreground: 250 250 250; /* #FAFAFA */
+  --muted: 66 66 66; /* #424242 */
+  --muted-foreground: 158 158 158; /* #9E9E9E */
+  --accent: 66 66 66; /* #424242 */
+  --accent-foreground: 250 250 250; /* #FAFAFA */
+  --destructive: 244 67 54; /* #F44336 */
+  --destructive-foreground: 255 255 255; /* #FFFFFF */
+  --border: 66 66 66; /* #424242 */
+  --input: 66 66 66; /* #424242 */
+  --ring: 33 150 243; /* #2196F3 */
+
+  /* Custom chat colors for dark mode */
+  --admin-color: 244 67 54; /* #F44336 */
+  --online-color: 76 175 80; /* #4CAF50 */
+  --surface: 33 33 33; /* #212121 */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+/* Message animations */
+.message-enter {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: messageEnter 0.25s ease-out forwards;
+}
+
+@keyframes messageEnter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Typing indicator */
+.typing-indicator {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Admin glow effect */
+.admin-glow {
+  box-shadow: 0 0 0 2px hsl(var(--admin-color)), 0 0 8px hsla(var(--admin-color), 0.3);
+}
+
+/* Online status pulse */
+.online-dot {
+  animation: onlinePulse 2s ease-in-out infinite;
+}
+
+@keyframes onlinePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Custom scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted)) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .mobile-full-height {
+    height: 100vh;
+    height: 100dvh;
+  }
+}
