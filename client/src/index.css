@@ -5,8 +5,8 @@
 :root {
   --background: 107 114 128; /* #6B7280 - Middle Gray */
   --foreground: 33 33 33; /* #212121 */
-  --card: 255 255 255; /* #FFFFFF */
-  --card-foreground: 33 33 33; /* #212121 */
+  --card: 75 85 99; /* #4B5563 - Dark Gray */
+  --card-foreground: 255 255 255; /* #FFFFFF */
   --popover: 255 255 255; /* #FFFFFF */
   --popover-foreground: 33 33 33; /* #212121 */
   --primary: 25 118 210; /* #1976D2 */
