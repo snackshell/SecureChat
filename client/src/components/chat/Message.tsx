@@ -72,8 +72,8 @@ export function Message({ message, currentUser, isDirectMessage = false }: Messa
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg rounded-tl-none p-2 max-w-xs">
-              {message.content && <p className="text-sm text-card-foreground">{message.content}</p>}
+            <div className="bg-gray-600 dark:bg-gray-700 rounded-lg rounded-tl-none p-2 max-w-xs">
+              {message.content && <p className="text-sm text-white">{message.content}</p>}
               {message.imageUrl && (
                 <img 
                   src={message.imageUrl} 
