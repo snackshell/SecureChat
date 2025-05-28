@@ -66,3 +66,4 @@ Create a `.env` file in the root directory:
 
 ```env
 DATABASE_URL=postgresql://username:password@host:port/database
+```
