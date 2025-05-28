@@ -1,19 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { UserSidebar } from '@/components/chat/UserSidebar';
 import { MessageArea } from '@/components/chat/MessageArea';
 import { DirectMessagePanel } from '@/components/chat/DirectMessagePanel';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { GroupMessage, DirectMessage, User, EditMessagePayload, UserOnlinePayload, UserOfflinePayload, ClientUser } from '@shared/schema';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Chat() {
   const { user, token, logout } = useAuth();
   const { theme } = useTheme();
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
   const [directMessages, setDirectMessages] = useState<Record<string, DirectMessage[]>>({});
-  const [onlineUsers, setOnlineUsers] = useState<ClientUser[]>([]);
+  const [allChatMembers, setAllChatMembers] = useState<ClientUser[]>([]);
   const [activeDMUser, setActiveDMUser] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
@@ -60,27 +61,24 @@ export default function Chat() {
       
       case 'user_online':
         const onlinePayload = wsMessage as UserOnlinePayload;
-        const onlineUser: ClientUser = {
-          id: onlinePayload.user.id,
-          username: onlinePayload.user.username,
-          isOnline: onlinePayload.user.isOnline,
-          lastSeen: onlinePayload.user.lastSeen,
-          socketId: undefined,
-          createdAt: onlinePayload.user.createdAt
-        };
-        setOnlineUsers(prev => {
-          const existingUser = prev.find(u => u.username === onlineUser.username);
+        setAllChatMembers(prevMembers => {
+          const existingUser = prevMembers.find(u => u.username === onlinePayload.user.username);
           if (existingUser) {
-            return prev.map(u => u.username === onlineUser.username ? onlineUser : u);
+            return prevMembers.map(u => 
+              u.username === onlinePayload.user.username 
+                ? { ...u, ...onlinePayload.user, isOnline: true } 
+                : u
+            );
           }
-          return [...prev, onlineUser];
+          // If user wasn't in the initial list (should be rare), add them
+          return [...prevMembers, { ...onlinePayload.user, isOnline: true }]; 
         });
         break;
       
       case 'user_offline':
         const offlinePayload = wsMessage as UserOfflinePayload;
-        setOnlineUsers(prev => 
-          prev.map(u => 
+        setAllChatMembers(prevMembers => 
+          prevMembers.map(u => 
             u.username === offlinePayload.username 
               ? { ...u, isOnline: false, lastSeen: offlinePayload.lastSeen } 
               : u
@@ -136,6 +134,25 @@ export default function Chat() {
     }
   }, [lastMessage, user?.username]);
 
+  const fetchAllChatMembers = useCallback(async () => {
+    if (!token) return [];
+    try {
+      const res = await apiRequest('GET', '/api/users/all_members', undefined, getAuthHeaders());
+      const data = await res.json() as ClientUser[];
+      setAllChatMembers(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch all chat members:', error);
+      return [];
+    }
+  }, [token]);
+
+  const { data: initialChatMembers, isLoading: isLoadingMembers } = useQuery(
+    'allChatMembers',
+    fetchAllChatMembers,
+    { enabled: !!token }
+  );
+
   const fetchGroupMessages = async () => {
     try {
       const res = await apiRequest('GET', '/api/messages/group', undefined, getAuthHeaders());
@@ -176,16 +193,6 @@ export default function Chat() {
       }));
     } catch (error) {
       console.error('Failed to load direct messages:', error);
-    }
-  };
-
-  const loadOnlineUsers = async () => {
-    try {
-      const response = await apiRequest('GET', '/api/users/online', undefined, getAuthHeaders());
-      const users = await response.json() as ClientUser[];
-      setOnlineUsers(users);
-    } catch (error) {
-      console.error('Failed to load online users:', error);
     }
   };
 
@@ -237,7 +244,6 @@ export default function Chat() {
     if (token && user) {
       console.log("[Chat.tsx] Token and user found, loading initial data.");
       loadGroupMessages();
-      loadOnlineUsers();
     } else {
       console.log("[Chat.tsx] No token or user found on mount/update.");
     }
@@ -249,10 +255,10 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+    <div className={`flex h-screen antialiased text-gray-800 dark:text-gray-200 ${theme === 'dark' ? 'dark' : ''}`}>
       <UserSidebar
-        currentUser={user}
-        onlineUsers={onlineUsers}
+        currentUser={user as User}
+        allUsers={allChatMembers}
         onUserClick={openDirectMessage}
         onLogout={logout}
         isConnected={isConnected}

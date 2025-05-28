@@ -16,6 +16,7 @@ const ALLOWED_USERS: Record<string, { password_plaintext: string; isAdmin: boole
   'mearg': { password_plaintext: '2025', isAdmin: false },
   'miki': { password_plaintext: '2025', isAdmin: false },
   'betty': { password_plaintext: '2025', isAdmin: false },
+  'meda': { password_plaintext: '2025', isAdmin: false },
   'teme': { password_plaintext: '2025', isAdmin: false },
 };
 
@@ -220,6 +221,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       socketId: undefined, // socketId is not typically sent in user lists
     }));
     res.json(clientUsers);
+  });
+
+  // Get all allowed members (for user sidebar)
+  app.get('/api/users/all_members', authenticateUser, async (req, res) => {
+    try {
+      const allowedUsernames = Object.keys(ALLOWED_USERS);
+      const allMemberDetails: ClientUser[] = [];
+
+      for (const username of allowedUsernames) {
+        const dbUser = await storage.getUserByUsername(username);
+        const allowedUserInfo = ALLOWED_USERS[username.toLowerCase()]; // Ensure case consistency
+
+        if (dbUser) {
+          allMemberDetails.push({
+            id: dbUser.id,
+            username: dbUser.username,
+            isAdmin: dbUser.isAdmin, // Use DB isAdmin status as source of truth after creation
+            isOnline: dbUser.isOnline,
+            lastSeen: dbUser.lastSeen?.toISOString() || null,
+            createdAt: dbUser.createdAt?.toISOString() || undefined,
+            socketId: undefined,
+          });
+        } else if (allowedUserInfo) {
+          // User is in ALLOWED_USERS but not in DB (e.g., never logged in)
+          // For a complete member list, we can represent them as offline.
+          // Ideally, the login process ensures they get added to DB.
+          allMemberDetails.push({
+            // Placeholder ID, or consider how to handle users not yet in DB
+            // For now, we'll omit ID if not in DB to avoid conflicts,
+            // or assign a temporary non-numeric one if your ClientUser schema allows.
+            // Let's assume ClientUser can have optional id for this scenario temporarily,
+            // or frontend handles users without DB id gracefully.
+            // id: -1, // Or some other indicator, or make id optional in ClientUser for this specific case
+            username: username,
+            isAdmin: allowedUserInfo.isAdmin,
+            isOnline: false,
+            lastSeen: null,
+            createdAt: undefined, // Or a default like new Date(0).toISOString()
+            socketId: undefined,
+          });
+        }
+      }
+      // Sort users: admin first, then alphabetically by username
+      allMemberDetails.sort((a, b) => {
+        if (a.isAdmin && !b.isAdmin) return -1;
+        if (!a.isAdmin && b.isAdmin) return 1;
+        return a.username.localeCompare(b.username);
+      });
+      
+      res.json(allMemberDetails);
+    } catch (error) {
+      console.error("Error fetching all members:", error);
+      res.status(500).json({ message: 'Error fetching all members' });
+    }
   });
 
   // Get group messages

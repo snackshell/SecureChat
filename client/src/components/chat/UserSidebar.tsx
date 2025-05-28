@@ -7,7 +7,7 @@ import type { User, ClientUser } from '@shared/schema';
 
 interface UserSidebarProps {
   currentUser: User;
-  onlineUsers: ClientUser[];
+  allUsers: ClientUser[];
   onUserClick: (username: string) => void;
   onLogout: () => void;
   isConnected: boolean;
@@ -15,7 +15,7 @@ interface UserSidebarProps {
 
 export function UserSidebar({ 
   currentUser, 
-  onlineUsers, 
+  allUsers, 
   onUserClick, 
   onLogout, 
   isConnected 
@@ -71,13 +71,13 @@ export function UserSidebar({
       </div>
 
       <div className="p-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Online Users ({onlineUsers.length})</h3>
+        <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">MEMBERS ({allUsers.length})</h3>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-2">
-        {onlineUsers.map(user => (
+        {allUsers.map(user => (
           <div
-            key={user.id}
+            key={user.id || user.username}
             className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-150"
             onClick={() => onUserClick(user.username)}
             title={`Chat with ${user.username}`}
@@ -89,11 +89,15 @@ export function UserSidebar({
             </Avatar>
             <span className="flex-grow font-medium text-sm text-gray-800 dark:text-gray-200 truncate">{user.username}</span>
             {user.isAdmin && <Crown className="h-4 w-4 text-red-500 shrink-0" />}
-            <div className="w-2 h-2 bg-green-500 rounded-full shrink-0" title="Online"></div>
+            {user.isOnline ? (
+              <div className="w-2 h-2 bg-green-500 rounded-full shrink-0" title="Online"></div>
+            ) : (
+              <div className="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full shrink-0" title="Offline"></div>
+            )}
           </div>
         ))}
-        {onlineUsers.length === 0 && (
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-4">No other users online.</p>
+        {allUsers.length === 0 && (
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-4">No members found.</p>
         )}
       </div>
     </div>

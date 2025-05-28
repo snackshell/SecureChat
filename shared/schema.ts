@@ -100,7 +100,7 @@ export type LoginRequest = z.infer<typeof loginSchema>;
 // These should generally align with the Drizzle schema select types but can be more specific for payloads
 
 export const ClientUserSchema = z.object({
-  id: z.number().int(), // Users table still uses serial IDs
+  id: z.number().int().optional(),
   username: z.string(),
   isAdmin: z.boolean().optional(),
   isOnline: z.boolean().optional(),
