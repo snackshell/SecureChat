@@ -21,7 +21,7 @@
   --destructive-foreground: 255 255 255; /* #FFFFFF */
   --border: 224 224 224; /* #E0E0E0 */
   --input: 224 224 224; /* #E0E0E0 */
-  --ring: 25 118 210; /* #1976D2 */
+  --ring: 75 85 99; /* #4B5563 - Dark Gray */
   --radius: 0.5rem;
 
   /* Custom chat colors */
@@ -49,7 +49,7 @@
   --destructive-foreground: 255 255 255; /* #FFFFFF */
   --border: 66 66 66; /* #424242 */
   --input: 66 66 66; /* #424242 */
-  --ring: 33 150 243; /* #2196F3 */
+  --ring: 75 85 99; /* #4B5563 - Dark Gray */
 
   /* Custom chat colors for dark mode */
   --admin-color: 244 67 54; /* #F44336 */
