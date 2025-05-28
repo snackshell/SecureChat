@@ -2,26 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  font-family: 'Inter', sans-serif;
+}
+
 :root {
-  --background: 107 114 128; /* #6B7280 - Middle Gray */
-  --foreground: 33 33 33; /* #212121 */
-  --card: 55 65 81; /* #374151 - Dark Gray */
-  --card-foreground: 255 255 255; /* #FFFFFF */
+  --background: 248 250 252; /* #F8FAFC - Light Gray */
+  --foreground: 15 23 42; /* #0F172A - Dark Slate */
+  --card: 255 255 255; /* #FFFFFF - White */
+  --card-foreground: 15 23 42; /* #0F172A - Dark Slate */
   --popover: 255 255 255; /* #FFFFFF */
-  --popover-foreground: 33 33 33; /* #212121 */
-  --primary: 25 118 210; /* #1976D2 */
+  --popover-foreground: 15 23 42; /* #0F172A */
+  --primary: 59 130 246; /* #3B82F6 - Modern Blue */
   --primary-foreground: 255 255 255; /* #FFFFFF */
-  --secondary: 245 245 245; /* #F5F5F5 */
-  --secondary-foreground: 33 33 33; /* #212121 */
-  --muted: 245 245 245; /* #F5F5F5 */
-  --muted-foreground: 117 117 117; /* #757575 */
-  --accent: 245 245 245; /* #F5F5F5 */
-  --accent-foreground: 33 33 33; /* #212121 */
-  --destructive: 211 47 47; /* #D32F2F */
+  --secondary: 241 245 249; /* #F1F5F9 - Light Blue Gray */
+  --secondary-foreground: 51 65 85; /* #334155 */
+  --muted: 248 250 252; /* #F8FAFC */
+  --muted-foreground: 100 116 139; /* #64748B */
+  --accent: 236 254 255; /* #ECFEFF - Light Cyan */
+  --accent-foreground: 22 78 99; /* #164E63 */
+  --destructive: 239 68 68; /* #EF4444 */
   --destructive-foreground: 255 255 255; /* #FFFFFF */
-  --border: 156 163 175; /* #9CA3AF - Light Gray */
-  --input: 75 85 99; /* #4B5563 - Dark Gray Input */
-  --ring: 75 85 99; /* #4B5563 - Dark Gray */
+  --border: 226 232 240; /* #E2E8F0 - Modern Border */
+  --input: 255 255 255; /* #FFFFFF - White Input */
+  --ring: 59 130 246; /* #3B82F6 - Modern Blue Focus */
   --radius: 0.5rem;
 
   /* Custom chat colors */
