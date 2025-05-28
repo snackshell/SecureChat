@@ -5,7 +5,7 @@
 :root {
   --background: 107 114 128; /* #6B7280 - Middle Gray */
   --foreground: 33 33 33; /* #212121 */
-  --card: 75 85 99; /* #4B5563 - Dark Gray */
+  --card: 55 65 81; /* #374151 - Dark Gray */
   --card-foreground: 255 255 255; /* #FFFFFF */
   --popover: 255 255 255; /* #FFFFFF */
   --popover-foreground: 33 33 33; /* #212121 */
@@ -19,8 +19,8 @@
   --accent-foreground: 33 33 33; /* #212121 */
   --destructive: 211 47 47; /* #D32F2F */
   --destructive-foreground: 255 255 255; /* #FFFFFF */
-  --border: 224 224 224; /* #E0E0E0 */
-  --input: 224 224 224; /* #E0E0E0 */
+  --border: 156 163 175; /* #9CA3AF - Light Gray */
+  --input: 75 85 99; /* #4B5563 - Dark Gray Input */
   --ring: 75 85 99; /* #4B5563 - Dark Gray */
   --radius: 0.5rem;
 

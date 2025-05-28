@@ -42,20 +42,20 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-8 h-8 text-primary-foreground" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-2xl border border-border">
+        <CardContent className="pt-8 pb-8 px-8">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <MessageCircle className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Welcome to ClassChat</h1>
-            <p className="text-muted-foreground">Enter your credentials to join the group</p>
+            <h1 className="text-3xl font-bold text-card-foreground mb-3">Welcome to ClassChat</h1>
+            <p className="text-gray-300 text-sm">Enter your credentials to join the group</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-sm font-medium text-card-foreground">Username</Label>
               <Input
                 id="username"
                 type="text"
@@ -63,13 +63,13 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}
-                className="mt-1"
+                className="bg-input border-border text-white placeholder-gray-400 h-12"
                 required
               />
             </div>
 
-            <div>
-              <Label htmlFor="password" className="text-sm font-medium">Group Password</Label>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-card-foreground">Group Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -77,14 +77,14 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="mt-1"
+                className="bg-input border-border text-white placeholder-gray-400 h-12"
                 required
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full"
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -98,9 +98,9 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-muted rounded-lg text-sm text-muted-foreground">
-            <p className="font-medium mb-1">Access Info:</p>
-            <p>• Group Password: <code className="bg-background px-1 rounded">2025</code></p>
+          <div className="mt-8 p-4 bg-gray-600 rounded-lg border border-gray-500">
+            <p className="font-medium mb-2 text-gray-200 text-sm">Access Info:</p>
+            <p className="text-gray-300 text-sm">• Group Password: <code className="bg-gray-700 text-gray-200 px-2 py-1 rounded font-mono">2025</code></p>
           </div>
         </CardContent>
       </Card>
