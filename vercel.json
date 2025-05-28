@@ -9,7 +9,6 @@
           "dist/**",
           "server/**",
           "shared/**",
-          "prisma/**", 
           "database.sql"
         ]
       }
@@ -33,7 +32,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/public/index.html"
     }
   ]
 } 
