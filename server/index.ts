@@ -69,10 +69,10 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = process.env.PORT || 5000; // Vercel provides PORT, fallback for local
   server.listen({
-    port,
-    host: "127.0.0.1",
+    port: Number(port), // Ensure port is a number
+    // host: "127.0.0.1", // Vercel handles host binding
   }, () => {
     log(`serving on port ${port}`);
   });
