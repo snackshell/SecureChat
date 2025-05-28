@@ -135,23 +135,41 @@ export default function Chat() {
   }, [lastMessage, user?.username]);
 
   const fetchAllChatMembers = useCallback(async () => {
-    if (!token) return [];
+    if (!token) {
+      console.log("[fetchAllChatMembers] No token, returning empty array.");
+      return [];
+    }
+    console.log("[fetchAllChatMembers] Token found, attempting to fetch.");
     try {
       const res = await apiRequest('GET', '/api/users/all_members', undefined, getAuthHeaders());
       const data = await res.json() as ClientUser[];
-      setAllChatMembers(data);
+      console.log("[fetchAllChatMembers] Fetched data:", data);
+      // setAllChatMembers(data); // Let useQuery handle providing the data directly or via useEffect
       return data;
     } catch (error) {
       console.error('Failed to fetch all chat members:', error);
       return [];
     }
-  }, [token]);
+  }, [token, getAuthHeaders]); // Added getAuthHeaders to dependencies of useCallback
 
-  const { data: initialChatMembers, isLoading: isLoadingMembers } = useQuery({
-    queryKey: ['allChatMembers'],
+  const { data: queryChatMembers, isLoading: isLoadingMembers, error: membersError } = useQuery({
+    queryKey: ['allChatMembers', token], // Add token to queryKey to refetch on login
     queryFn: fetchAllChatMembers,
-    enabled: !!token,
+    enabled: !!token, // Only run if token is available
   });
+
+  useEffect(() => {
+    if (queryChatMembers) {
+      console.log("[Chat.tsx useEffect] queryChatMembers updated, setting allChatMembers:", queryChatMembers);
+      setAllChatMembers(queryChatMembers);
+    }
+  }, [queryChatMembers]); // useEffect to sync useQuery result to allChatMembers state
+
+  useEffect(() => {
+    if (membersError) {
+        console.error("[Chat.tsx useQuery allChatMembers] Error:", membersError);
+    }
+  }, [membersError]);
 
   const fetchGroupMessages = async () => {
     try {
@@ -242,10 +260,11 @@ export default function Chat() {
 
   useEffect(() => {
     if (token && user) {
-      console.log("[Chat.tsx] Token and user found, loading initial data.");
+      console.log("[Chat.tsx] Token and user found, loading initial data (group messages).");
       loadGroupMessages();
+      // fetchAllChatMembers is handled by useQuery
     } else {
-      console.log("[Chat.tsx] No token or user found on mount/update.");
+      console.log("[Chat.tsx] No token or user found on mount/update for initial data load.");
     }
   }, [token, user]);
 
