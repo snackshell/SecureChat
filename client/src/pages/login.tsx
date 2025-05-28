@@ -42,7 +42,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-500 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="text-center mb-6">
@@ -101,7 +101,6 @@ export default function Login() {
           <div className="mt-6 p-4 bg-muted rounded-lg text-sm text-muted-foreground">
             <p className="font-medium mb-1">Access Info:</p>
             <p>• Group Password: <code className="bg-background px-1 rounded">2025</code></p>
-            <p>• Admin Access: <code className="bg-background px-1 rounded">adu / 1995</code></p>
           </div>
         </CardContent>
       </Card>
