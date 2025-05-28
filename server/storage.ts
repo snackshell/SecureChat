@@ -4,9 +4,9 @@ import {
   directMessages,
   type User, 
   type InsertUser,
-  type GroupMessage,
+  type GroupMessageDrizzle,
   type InsertGroupMessage,
-  type DirectMessage,
+  type DirectMessageDrizzle,
   type InsertDirectMessage
 } from "@shared/schema";
 import { db } from "./db";
@@ -21,12 +21,14 @@ export interface IStorage {
   getAllOnlineUsers(): Promise<User[]>;
   
   // Group message operations
-  createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
-  getGroupMessages(limit?: number): Promise<GroupMessage[]>;
+  createGroupMessage(message: InsertGroupMessage): Promise<GroupMessageDrizzle>;
+  getGroupMessages(limit?: number): Promise<GroupMessageDrizzle[]>;
+  editGroupMessage(messageId: string, senderUsername: string, newContent: string): Promise<GroupMessageDrizzle | undefined>;
   
   // Direct message operations
-  createDirectMessage(message: InsertDirectMessage): Promise<DirectMessage>;
-  getDirectMessages(user1: string, user2: string, limit?: number): Promise<DirectMessage[]>;
+  createDirectMessage(message: InsertDirectMessage): Promise<DirectMessageDrizzle>;
+  getDirectMessages(user1: string, user2: string, limit?: number): Promise<DirectMessageDrizzle[]>;
+  editDirectMessage(messageId: string, editorUsername: string, newContent: string): Promise<DirectMessageDrizzle | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -62,7 +64,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).where(eq(users.isOnline, true));
   }
 
-  async createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage> {
+  async createGroupMessage(message: InsertGroupMessage): Promise<GroupMessageDrizzle> {
     const [groupMessage] = await db
       .insert(groupMessages)
       .values(message)
@@ -70,7 +72,7 @@ export class DatabaseStorage implements IStorage {
     return groupMessage;
   }
 
-  async getGroupMessages(limit: number = 50): Promise<GroupMessage[]> {
+  async getGroupMessages(limit: number = 50): Promise<GroupMessageDrizzle[]> {
     return await db
       .select()
       .from(groupMessages)
@@ -78,7 +80,20 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async createDirectMessage(message: InsertDirectMessage): Promise<DirectMessage> {
+  async editGroupMessage(messageId: string, senderUsername: string, newContent: string): Promise<GroupMessageDrizzle | undefined> {
+    const [updatedMessage] = await db
+      .update(groupMessages)
+      .set({
+        content: newContent,
+        isEdited: true,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(groupMessages.id, messageId), eq(groupMessages.sender, senderUsername)))
+      .returning();
+    return updatedMessage || undefined;
+  }
+
+  async createDirectMessage(message: InsertDirectMessage): Promise<DirectMessageDrizzle> {
     const [directMessage] = await db
       .insert(directMessages)
       .values(message)
@@ -86,7 +101,7 @@ export class DatabaseStorage implements IStorage {
     return directMessage;
   }
 
-  async getDirectMessages(user1: string, user2: string, limit: number = 50): Promise<DirectMessage[]> {
+  async getDirectMessages(user1: string, user2: string, limit: number = 50): Promise<DirectMessageDrizzle[]> {
     return await db
       .select()
       .from(directMessages)
@@ -98,6 +113,24 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(directMessages.timestamp))
       .limit(limit);
+  }
+
+  async editDirectMessage(messageId: string, editorUsername: string, newContent: string): Promise<DirectMessageDrizzle | undefined> {
+    const [updatedMessage] = await db
+      .update(directMessages)
+      .set({
+        content: newContent,
+        isEdited: true,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(directMessages.id, messageId), eq(directMessages.fromUser, editorUsername)))
+      .returning();
+    // Ensure the message is returned with all fields for the frontend/WS broadcast
+    if (updatedMessage) {
+        const [fullMessage] = await db.select().from(directMessages).where(eq(directMessages.id, updatedMessage.id));
+        return fullMessage || undefined;
+    }
+    return undefined;
   }
 }
 

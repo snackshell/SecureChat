@@ -1,9 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '@/lib/queryClient';
+import { useQueryClient } from 'react-query';
 
 interface User {
+  id: number;
   username: string;
+  password: string;
   isAdmin: boolean;
+  isOnline: boolean;
+  lastSeen: Date | null;
+  createdAt: Date;
 }
 
 interface AuthState {
@@ -20,6 +26,8 @@ export function useAuth() {
     isAuthenticated: false,
     isLoading: true,
   });
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const token = localStorage.getItem('chat_token');
@@ -61,27 +69,28 @@ export function useAuth() {
     }
   };
 
-  const logout = async () => {
-    try {
-      if (authState.token) {
-        await apiRequest('POST', '/api/logout', {}, {
-          'Authorization': `Bearer ${authState.token}`
-        });
+  const logout = useCallback(async () => {
+    if (authState.token) {
+      try {
+        await apiRequest('POST', '/api/logout', undefined, { 'Authorization': `Bearer ${authState.token}` });
+      } catch (error) {
+        console.error("Logout API call failed:", error);
+        // Still proceed with client-side logout
       }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('chat_token');
-      localStorage.removeItem('chat_user');
-      
-      setAuthState({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
     }
-  };
+    setAuthState(prev => ({
+      ...prev,
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+    }));
+    localStorage.removeItem('chat_token');
+    localStorage.removeItem('chat_user');
+    queryClient.clear(); // Clear react-query cache
+    console.log("User logged out, redirecting to /login with a full page reload.");
+    window.location.replace('/login'); // Redirect to login page
+  }, [authState.token, queryClient]);
 
   return {
     ...authState,

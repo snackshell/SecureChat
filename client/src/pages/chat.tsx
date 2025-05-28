@@ -5,55 +5,104 @@ import { UserSidebar } from '@/components/chat/UserSidebar';
 import { MessageArea } from '@/components/chat/MessageArea';
 import { DirectMessagePanel } from '@/components/chat/DirectMessagePanel';
 import { apiRequest } from '@/lib/queryClient';
-import type { GroupMessage, DirectMessage, User } from '@shared/schema';
+import { useTheme } from '@/contexts/ThemeContext';
+import type { GroupMessage, DirectMessage, User, EditMessagePayload, UserOnlinePayload, UserOfflinePayload, ClientUser } from '@shared/schema';
 
 export default function Chat() {
   const { user, token, logout } = useAuth();
+  const { theme } = useTheme();
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
   const [directMessages, setDirectMessages] = useState<Record<string, DirectMessage[]>>({});
-  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<ClientUser[]>([]);
   const [activeDMUser, setActiveDMUser] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
-  const handleWebSocketMessage = (message: any) => {
-    switch (message.type) {
+  const getAuthHeaders = (): Record<string, string> | undefined => {
+    return token ? { 'Authorization': `Bearer ${token}` } : undefined;
+  };
+
+  const handleWebSocketMessage = (wsMessage: any) => {
+    switch (wsMessage.type) {
       case 'new_group_message':
-        setGroupMessages(prev => [...prev, message.message]);
+        setGroupMessages(prev => [...prev, wsMessage.message]);
         break;
       
       case 'new_direct_message':
-        const dm = message.message;
-        const otherUser = dm.fromUser === user?.username ? dm.toUser : dm.fromUser;
+        const dm = wsMessage.message as DirectMessage;
+        const otherUserInDM = dm.fromUser === user?.username ? dm.toUser : dm.fromUser;
         setDirectMessages(prev => ({
           ...prev,
-          [otherUser]: [...(prev[otherUser] || []), dm],
+          [otherUserInDM]: [...(prev[otherUserInDM] || []), dm],
         }));
+        if (activeDMUser === otherUserInDM) {
+          // This might trigger a re-render or you might have a more direct way
+        }
+        break;
+
+      case 'edit_group_message':
+        const editedGroupMessage = wsMessage.message as GroupMessage;
+        setGroupMessages(prev => 
+          prev.map(msg => msg.id === editedGroupMessage.id ? editedGroupMessage : msg)
+        );
+        break;
+
+      case 'edit_direct_message':
+        const editedDm = wsMessage.message as DirectMessage;
+        const otherUserInEditedDM = editedDm.fromUser === user?.username ? editedDm.toUser : editedDm.fromUser;
+        setDirectMessages(prev => {
+          const userDms = prev[otherUserInEditedDM] || [];
+          return {
+            ...prev,
+            [otherUserInEditedDM]: userDms.map(msg => msg.id === editedDm.id ? editedDm : msg),
+          };
+        });
         break;
       
       case 'user_online':
-        loadOnlineUsers();
+        const onlinePayload = wsMessage as UserOnlinePayload;
+        const onlineUser: ClientUser = {
+          id: onlinePayload.user.id,
+          username: onlinePayload.user.username,
+          isOnline: onlinePayload.user.isOnline,
+          lastSeen: onlinePayload.user.lastSeen,
+          socketId: undefined,
+          createdAt: onlinePayload.user.createdAt
+        };
+        setOnlineUsers(prev => {
+          const existingUser = prev.find(u => u.username === onlineUser.username);
+          if (existingUser) {
+            return prev.map(u => u.username === onlineUser.username ? onlineUser : u);
+          }
+          return [...prev, onlineUser];
+        });
         break;
       
       case 'user_offline':
-        loadOnlineUsers();
+        const offlinePayload = wsMessage as UserOfflinePayload;
+        setOnlineUsers(prev => 
+          prev.map(u => 
+            u.username === offlinePayload.username 
+              ? { ...u, isOnline: false, lastSeen: offlinePayload.lastSeen } 
+              : u
+          )
+        );
         break;
       
       case 'user_typing':
         setTypingUsers(prev => {
           const newSet = new Set(prev);
-          if (message.isTyping) {
-            newSet.add(message.username);
+          if (wsMessage.isTyping) {
+            newSet.add(wsMessage.username);
           } else {
-            newSet.delete(message.username);
+            newSet.delete(wsMessage.username);
           }
           return newSet;
         });
         
-        // Clear typing status after 3 seconds
         setTimeout(() => {
           setTypingUsers(prev => {
             const newSet = new Set(prev);
-            newSet.delete(message.username);
+            newSet.delete(wsMessage.username);
             return newSet;
           });
         }, 3000);
@@ -61,16 +110,55 @@ export default function Chat() {
     }
   };
 
-  const { isConnected, sendTypingStatus } = useWebSocket({
+  const { isConnected, sendTypingStatus, lastMessage } = useWebSocket({
     token,
     onMessage: handleWebSocketMessage,
   });
 
+  useEffect(() => {
+    if (lastMessage) {
+      if (lastMessage.type === 'edit_group_message') {
+        const editedGroupMessage = lastMessage.message as GroupMessage;
+        setGroupMessages(prev => 
+          prev.map(msg => msg.id === editedGroupMessage.id ? editedGroupMessage : msg)
+        );
+      } else if (lastMessage.type === 'edit_direct_message') {
+        const editedDm = lastMessage.message as DirectMessage;
+        const otherUserInEditedDM = editedDm.fromUser === user?.username ? editedDm.toUser : editedDm.fromUser;
+        setDirectMessages(prev => {
+          const userDms = prev[otherUserInEditedDM] || [];
+          return {
+            ...prev,
+            [otherUserInEditedDM]: userDms.map(msg => msg.id === editedDm.id ? editedDm : msg),
+          };
+        });
+      }
+    }
+  }, [lastMessage, user?.username]);
+
+  const fetchGroupMessages = async () => {
+    try {
+      const res = await apiRequest('GET', '/api/messages/group', undefined, getAuthHeaders());
+      const data = await res.json();
+      setGroupMessages(data);
+    } catch (error) {
+      console.error('Failed to fetch group messages:', error);
+    }
+  };
+
+  const fetchDirectMessages = async (otherUsername: string) => {
+    try {
+      const res = await apiRequest('GET', `/api/messages/direct/${otherUsername}`, undefined, getAuthHeaders());
+      const data = await res.json();
+      setDirectMessages(prev => ({ ...prev, [otherUsername]: data }));
+    } catch (error) {
+      console.error(`Failed to fetch DMs for ${otherUsername}:`, error);
+    }
+  };
+
   const loadGroupMessages = async () => {
     try {
-      const response = await apiRequest('GET', '/api/messages/group', undefined, {
-        'Authorization': `Bearer ${token}`,
-      });
+      const response = await apiRequest('GET', '/api/messages/group', undefined, getAuthHeaders());
       const messages = await response.json();
       setGroupMessages(messages);
     } catch (error) {
@@ -80,9 +168,7 @@ export default function Chat() {
 
   const loadDirectMessages = async (otherUser: string) => {
     try {
-      const response = await apiRequest('GET', `/api/messages/direct/${otherUser}`, undefined, {
-        'Authorization': `Bearer ${token}`,
-      });
+      const response = await apiRequest('GET', `/api/messages/direct/${otherUser}`, undefined, getAuthHeaders());
       const messages = await response.json();
       setDirectMessages(prev => ({
         ...prev,
@@ -95,10 +181,8 @@ export default function Chat() {
 
   const loadOnlineUsers = async () => {
     try {
-      const response = await apiRequest('GET', '/api/users/online', undefined, {
-        'Authorization': `Bearer ${token}`,
-      });
-      const users = await response.json();
+      const response = await apiRequest('GET', '/api/users/online', undefined, getAuthHeaders());
+      const users = await response.json() as ClientUser[];
       setOnlineUsers(users);
     } catch (error) {
       console.error('Failed to load online users:', error);
@@ -106,48 +190,41 @@ export default function Chat() {
   };
 
   const sendGroupMessage = async (content: string, imageUrl?: string) => {
+    if (!user) return;
     try {
-      await apiRequest('POST', '/api/messages/group', {
-        content,
-        imageUrl,
-      }, {
-        'Authorization': `Bearer ${token}`,
-      });
+      await apiRequest('POST', '/api/messages/group', { content, imageUrl }, getAuthHeaders());
     } catch (error) {
       console.error('Failed to send group message:', error);
     }
   };
 
-  const sendDirectMessage = async (toUser: string, content: string, imageUrl?: string) => {
+  const sendDirectMessage = async (toUsername: string, content: string, imageUrl?: string) => {
+    if (!user) return;
     try {
-      await apiRequest('POST', '/api/messages/direct', {
-        toUser,
-        content,
-        imageUrl,
-      }, {
-        'Authorization': `Bearer ${token}`,
-      });
+      await apiRequest('POST', '/api/messages/direct', { toUser: toUsername, content, imageUrl }, getAuthHeaders());
     } catch (error) {
-      console.error('Failed to send direct message:', error);
+      console.error('Failed to send direct message to', toUsername, error);
     }
   };
 
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('image', file);
-
-    const response = await apiRequest('POST', '/api/upload', formData, {
-      'Authorization': `Bearer ${token}`,
-    });
-    const data = await response.json();
-    return data.imageUrl;
+    try {
+      const res = await apiRequest('POST', '/api/upload', formData, getAuthHeaders());
+      const data = await res.json();
+      return data.imageUrl;
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      throw error;
+    }
   };
 
   const openDirectMessage = (username: string) => {
     if (username !== user?.username) {
       setActiveDMUser(username);
       if (!directMessages[username]) {
-        loadDirectMessages(username);
+        fetchDirectMessages(username);
       }
     }
   };
@@ -157,16 +234,22 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    loadGroupMessages();
-    loadOnlineUsers();
-  }, []);
+    if (token && user) {
+      console.log("[Chat.tsx] Token and user found, loading initial data.");
+      loadGroupMessages();
+      loadOnlineUsers();
+    } else {
+      console.log("[Chat.tsx] No token or user found on mount/update.");
+    }
+  }, [token, user]);
 
-  if (!user) {
+  if (!user || !token) {
+    console.log("[Chat.tsx] Critical: No user or token. Not rendering Chat.");
     return null;
   }
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       <UserSidebar
         currentUser={user}
         onlineUsers={onlineUsers}

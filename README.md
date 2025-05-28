@@ -1,4 +1,4 @@
-# ClassChat - Real-time Group Messaging
+# SecureChat - Real-time Group Messaging
 
 A real-time group chat application built with React, Express.js, PostgreSQL, and WebSockets. Designed for classmates to communicate in a secure, private group environment.
 

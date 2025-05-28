@@ -11,13 +11,27 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  headers?: Record<string, string>,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const fetchOptions: RequestInit = {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
-  });
+    headers: { ...headers }, // Start with provided headers
+  };
+
+  if (data !== undefined) {
+    if (data instanceof FormData) {
+      fetchOptions.body = data;
+      // Do NOT set Content-Type for FormData; the browser will do it correctly
+      // including the boundary part of multipart/form-data.
+    } else {
+      fetchOptions.body = JSON.stringify(data);
+      // Ensure Content-Type is set for JSON data, even if other headers are present.
+      (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
+    }
+  }
+
+  const res = await fetch(url, fetchOptions);
 
   await throwIfResNotOk(res);
   return res;
