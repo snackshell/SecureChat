@@ -147,11 +147,11 @@ export default function Chat() {
     }
   }, [token]);
 
-  const { data: initialChatMembers, isLoading: isLoadingMembers } = useQuery(
-    'allChatMembers',
-    fetchAllChatMembers,
-    { enabled: !!token }
-  );
+  const { data: initialChatMembers, isLoading: isLoadingMembers } = useQuery({
+    queryKey: ['allChatMembers'],
+    queryFn: fetchAllChatMembers,
+    enabled: !!token,
+  });
 
   const fetchGroupMessages = async () => {
     try {
